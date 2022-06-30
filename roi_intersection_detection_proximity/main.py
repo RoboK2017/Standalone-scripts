@@ -13,6 +13,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--video', type=str,
     help='Input video path', required=True)
 
+parser.add_argument('--key', type=str,
+    default='', help='Video name *')    
+
 parser.add_argument('--config', type=str,
     default='config/test.json', help='Config path')    
 
@@ -55,8 +58,9 @@ if __name__ == "__main__":
     args = parser.parse_args()    
     #print(args.video, args.config)
     ser = ROIService(args.config)
+
     for f in os.listdir(args.video):
-        if '.avi' in f or '.mp4' in f:
+        if ('.avi' in f or '.mp4' in f) and (args.key in f) :
             ser.process(os.path.join(args.video, f))
         
             

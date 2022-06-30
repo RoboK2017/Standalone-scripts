@@ -13,8 +13,11 @@ class DataWriter():
         self.base_path = config['output_folder']
         self.rev_map = config['nm_rev_map']
         self.near_miss_pair = config['target_pair_nm']
-        self.near_miss_detector = ProximityDetector()
         self.alpha = config['proximity_alpha']
+        self.outlier_priority = config['outlier_priority']
+        self.iou_threshold = config['iou_threshold']
+        self.roi_nm = config['roi_nm']
+        self.near_miss_detector = ProximityDetector(self.roi_nm, self.width, self.height)
         
     def _divideFrames(self, re, buffer, video_file):
 
@@ -100,9 +103,10 @@ class DataWriter():
             boxes_nm = [bounding_boxes_nm[i] for i in idx]
             cat_nm = [categories[i] for i in idx]
             #print(self.alpha)
-            result_nm = self.near_miss_detector.process(boxes_nm, cat_nm, self.near_miss_pair, self.alpha)
-
-            miss_type = np.max(max(result_nm, key=max))
+            result_nm = self.near_miss_detector.process(boxes_nm, cat_nm, self.near_miss_pair, self.alpha, self.iou_threshold, self.outlier_priority)
+            miss_type = 0
+            if len(result_nm) > 0 :
+                miss_type = np.max(max(result_nm, key=max))
 
             base_path = os.path.join(self.base_path, self.rev_map[miss_type])
             f = os.path.join(base_path , filename[:-4] + '_' + str(i) + '.mp4')

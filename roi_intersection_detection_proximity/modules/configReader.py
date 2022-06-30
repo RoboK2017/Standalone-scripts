@@ -13,7 +13,8 @@ class ConfigReader(dict):
             
             conf = json.load(c)
             temp, vals = {}, []
-            rev_map = {0:'roi'}
+            outlier_priority = conf['outlier_priority']
+            rev_map = {0:'roi', outlier_priority :'person_in_forklift'}
             
             out_path = conf['output_folder']
             
@@ -31,13 +32,18 @@ class ConfigReader(dict):
             conf['target_pair_nm'] = temp 
             conf['target_class_nm'] = np.unique(vals)
             conf['nm_rev_map'] = rev_map
+            #rev_map[1] = ""
             
             for k in rev_map:
                 out_fol = os.path.join(out_path, rev_map[k])
                 if not os.path.exists(out_fol):
                     os.makedirs(out_fol)
+
+           # o_f = os.path.join(out_path, "")       
+
             
             conf['roi'] = [np.array(reg, dtype=int) for reg in conf['roi']]
+            conf['roi_nm'] = [np.array(reg, dtype=int) for reg in conf['roi_nm']]
             
         self.update(conf)
         

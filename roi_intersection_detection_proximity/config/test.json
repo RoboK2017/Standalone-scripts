@@ -1,14 +1,17 @@
 {
     "width":720,
     "height":576,
-    "trigger":"point",
-    "weight":"net/yolov4-tiny-bristol_final.weights",
-    "config":"net/yolov4-tiny-bristol.cfg",
+    "trigger":"area",
+    "weight":"net/yolov4-tiny-bristol_final_2022_04_28.weights",
+    "config":"net/yolov4-tiny-bristol_2022_04_28.cfg",
     "class_names":"net/bristol.names",
     "roi":[[[436,111], [72,290], [600,568], [689,147]], [[9,312], [0,572], [600,568], [72,290]]],
-    "buffer": 2,
-    "output_folder" : "output/",
+    "buffer": 3,
+    "output_folder": "output/",
     "target_class_roi": ["person"],
-    "target_pair_nm" : [["person", "forklift", 1],["forklift","forklift", 2]],
-    "proximity_alpha" : 0.10
+    "target_pair_nm": [["person", "forklift", 1],["forklift","forklift", 3], ["person","lorry",4]],
+    "roi_nm":[[[436,111], [72,290], [600,568], [689,147]], [[9,312], [0,572], [600,568], [72,290]]],
+    "proximity_alpha": 0.01,
+    "outlier_priority": 2,
+    "iou_threshold": 0.90
 }
