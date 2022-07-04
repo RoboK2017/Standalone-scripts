@@ -3,10 +3,11 @@ from scipy.spatial import distance_matrix
 import cv2
 
 class ProximityDetector():
-    def __init__(self, rois:list, width:int, height:int):
+    def __init__(self, rois:list, width:int, height:int, threshold:float):
         self.roi = rois
         self.width = width
         self.height = height
+        self.threshold = threshold
         self.roi_imgs = self._drawPloygon()
 
     def _drawPloygon(self):
@@ -19,7 +20,7 @@ class ProximityDetector():
             
         return np.array(imgarr)     
 
-    def _getIntersectionPercentage(self, box):
+    def _getIntersectionPercentage(self, box:np.array):
         
         # get the bounding box and check if the roi and box intersect
         roiImg = self.roi_imgs
@@ -41,7 +42,7 @@ class ProximityDetector():
                 intersctionPerc = interArea/roiArea
         
 
-        return intersctionPerc > 0.5
+        return intersctionPerc >= self.threshold
 
     def _cal_iou(self, boxA, boxB):
         # determine the (x, y)-coordinates of the intersection rectangle
@@ -103,7 +104,7 @@ class ProximityDetector():
         return res
         
     def process(self, frames:list, class_arr:list, target_pair:dict, alpha:float, iou_thresh:float, outlier_priority:int):
-        result = []
+        result, miss_type = [], 0
         for boxes, classes in zip(frames, class_arr):
             if len(boxes) > 0:
                 cx = (boxes[:,0] + boxes[:,2])//2
@@ -113,10 +114,13 @@ class ProximityDetector():
                 r = r.reshape(-1,1) + r + alpha*r
                 res = self._testProximity(centroid, r, classes, target_pair, boxes, iou_thresh, outlier_priority)
 
-
+                #class_filter = np.isin(classes, self.nm_classes)
                 result.append(res)
+                if max(res) > miss_type:
+                    miss_type = max(res)
+
 
             else:
-                result.append([0])
+                result.append([])
 
-        return result   
+        return result, miss_type   

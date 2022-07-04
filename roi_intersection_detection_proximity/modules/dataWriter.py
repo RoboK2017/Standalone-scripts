@@ -2,6 +2,7 @@ import numpy as np
 from .nearMissDetector import ProximityDetector
 import cv2
 import os
+import random, string
 #from moviepy.editor import VideoFileClip
 
 class DataWriter():
@@ -17,8 +18,23 @@ class DataWriter():
         self.outlier_priority = config['outlier_priority']
         self.iou_threshold = config['iou_threshold']
         self.roi_nm = config['roi_nm']
-        self.near_miss_detector = ProximityDetector(self.roi_nm, self.width, self.height)
-        
+        self.near_miss_detector = ProximityDetector(self.roi_nm, self.width, self.height, config['nm_roi_threshold'])
+        self.output_fps = config['output_fps']
+        self.target_class_roi = config['target_class_roi']
+    
+    def _filterResult(self, result:list, cat:list, target_class:np.array):
+        result_filtered = []
+        for res, c in zip(result,cat):
+            temp = []
+            if len(c) > 0 :
+                x = np.isin(c, target_class)
+                temp = np.bitwise_and(res,x)
+
+            result_filtered.append(temp)
+
+        return result_filtered
+
+
     def _divideFrames(self, re, buffer, video_file):
 
         res = np.array([sum(r) for r in re], dtype=int)
@@ -57,8 +73,10 @@ class DataWriter():
         for boxes, img, cols in zip(frames, imgs, cat_col):
             #img = cv2.imread(img)
             img = cv2.drawContours(img, self.roi, -1, color=(255,0,0), thickness=2)
+            #print(len(boxes), len(cols))
             for i in range(len(boxes)):
                 x, y, w, h = boxes[i]
+
                 col = (0,255,0)
                 if cols[i]:
                     col = (0,0,255)
@@ -92,37 +110,45 @@ class DataWriter():
         return frames
 
 
-    def writeData(self, filename, video_file, frames, result, bounding_boxes_nm, categories, buffer=5):
-
-        indx_arr, frame_arr = self._divideFrames(result, buffer, video_file)
+    def writeData(self, video_path:str, bounding_boxes:list, result_roi:list, categories:list, buffer=5):
+        filename = os.path.basename(video_path)
+        result_roi_filtered = self._filterResult(result_roi, categories, self.target_class_roi)
+        indx_arr, frame_arr = self._divideFrames(result_roi_filtered, buffer, video_path)
        
         for i in range(len(indx_arr)):
             #f = filename + '_' + str(i) + '.mp4'
             idx = indx_arr[i]
             #img_arr = self._grabFrames(video_file)
-            boxes_nm = [bounding_boxes_nm[i] for i in idx]
-            cat_nm = [categories[i] for i in idx]
+            boxes = [bounding_boxes[i] for i in idx]
+            cat = [categories[i] for i in idx]
             #print(self.alpha)
-            result_nm = self.near_miss_detector.process(boxes_nm, cat_nm, self.near_miss_pair, self.alpha, self.iou_threshold, self.outlier_priority)
+            result_nm, miss_type = self.near_miss_detector.process(boxes, cat, self.near_miss_pair, self.alpha, self.iou_threshold, self.outlier_priority)
             miss_type = 0
-            if len(result_nm) > 0 :
-                miss_type = np.max(max(result_nm, key=max))
+            
+            # if len(result_nm) > 0 :
+            #     miss_type = np.max(max(result_nm, key=max))
 
             base_path = os.path.join(self.base_path, self.rev_map[miss_type])
             f = os.path.join(base_path , filename[:-4] + '_' + str(i) + '.mp4')
             img_arr = frame_arr[i]
-            box_arr = [frames[i] for i in idx]
+            #box_arr = [frames[i] for i in idx]
 
-            cat_col = [np.zeros(len(x)) for x in box_arr]
+            cat_col = [result_roi[i] for i in idx]
        
             if miss_type > 0 :
                 #f = os.path.join(self.near_miss_path , filename[:-4] + '_' + str(i) + '.mp4')
-                box_arr = boxes_nm
+                #box_arr = boxes_nm
                 cat_col = result_nm
             
             #print(img_arr)
-            self._gen_video(f, img_arr, box_arr, cat_col)
+            #print(self.rev_map[miss_type])
+            self._gen_video(f, img_arr, boxes, cat_col, fps=self.output_fps)
 
+            ### create output for csv
+            # for i in idx:
+            #     temp_arr = [self.rev_map[mt] for mt in result_nm[i]]
+            #     nm_result_arr[i] = temp_arr
+            
             # videoClip = VideoFileClip(f)
             # videoClip.write_gif(f[:-4]+ ".gif")
 

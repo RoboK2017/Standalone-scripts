@@ -4,7 +4,6 @@ from modules.roiIntersectionDetector import ROIDetector
 from modules.dataWriter import DataWriter
 import argparse
 import os
-import time
 
 
 
@@ -29,26 +28,25 @@ class ROIService():
         self.reader = VideoReader(self.config)
 
 
-    def process(self, video, fps=10):
+    def process(self, video_path:str, fps=10):
 
         print("Detecting objects in video...")
         #st_time = time.time()
-        bounding_boxes, bounding_boxes_nm, categories = self.reader.process_video(video)
+        bounding_boxes, categories = self.reader.process_video(video_path)
         #et_time = time.time()
         #print(et_time - st_time)
         print("detecting ROI interaction...")
         #print(len(frames))
         detector = ROIDetector(self.config)
         
-        result = detector.process([bounding_boxes])
+        result_roi = detector.process([bounding_boxes, self.config['roi_threshold']])
         print('writing results into output folder...')
         writer = DataWriter(self.config)
-        video_name = os.path.basename(video)
+        #video_name = os.path.basename(video)
        # output_path = os.path.join(self.config['output_folder'] , video_name[:-4])
         buffer = self.config['buffer'] * fps
-        writer.writeData(video_name, video, bounding_boxes, result, bounding_boxes_nm, categories, buffer)
+        writer.writeData(video_path, bounding_boxes, result_roi, categories, buffer)
 
-        
 
         
 if __name__ == "__main__":

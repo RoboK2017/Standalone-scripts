@@ -37,7 +37,7 @@ class PointIntersectionDetector():
         
         return alerts  
         
-    def process(self, frames):
+    def process(self, frames, thresold=0.5):
 
         # process all the imput frames and return the results
         

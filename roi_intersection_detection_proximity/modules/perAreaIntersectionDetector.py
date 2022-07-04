@@ -34,7 +34,7 @@ class PerAreaIntersectionDetector():
                 intersctionPerc = interArea/roiArea
         
 
-        return intersctionPerc > threshold
+        return intersctionPerc >= threshold
     
     def process(self, frames, threshold=0.5):
         

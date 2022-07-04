@@ -8,13 +8,13 @@ class VideoReader():
     
     def __init__(self, cfg):
         self.cfg = cfg
-        self.yolo = YoloDetector(cfg['weight'], cfg['config'], cfg['class_names'])
+        self.yolo = YoloDetector(cfg['weight'], cfg['config'], cfg['class_names'], cfg['detector_threshold'])
 
         
     def process_video(self, video):
         
         cap = cv2.VideoCapture(video)
-        bounding_boxes_roi, categories, bounding_boxes_nm = [], [], []
+        bounding_boxes, categories = [], []
         # counter = 0
         # if not os.path.exists('temp'):
         #     os.makedirs('temp')
@@ -28,17 +28,14 @@ class VideoReader():
                 if(len(boxes) > 0):
                     boxes[:,2] = boxes[:,0] + boxes[:,2]
                     boxes[:,3] = boxes[:,1] + boxes[:,3]
-                temp_box_roi, temp_box_nm, cat = [], [], []
+                temp_box, cat = [], []
                 for box, c in zip(boxes, class_name):
-                    if c in self.cfg['target_class_roi']:
-                        temp_box_roi.append(box)
-
-                    if c in self.cfg['target_class_nm']:
-                        temp_box_nm.append(box) 
-                        cat.append(c)  
-                
-                bounding_boxes_roi.append(np.array(temp_box_roi, dtype=int))
-                bounding_boxes_nm.append(np.array(temp_box_nm, dtype=int))
+                    if (c in self.cfg['target_class_roi']) or (c in self.cfg['target_class_nm']):
+                        temp_box.append(box)
+                        cat.append(c) 
+                         
+                bounding_boxes.append(np.array(temp_box, dtype=int))
+                #bounding_boxes_nm.append(np.array(temp_box_nm, dtype=int))
                 categories.append(np.array(cat))
                 #image_name = 'temp/' + str(counter) + '.jpg'
                 #cv2.imwrite(image_name, frame)
@@ -51,4 +48,4 @@ class VideoReader():
         cap.release()       
         cv2.destroyAllWindows()   
         
-        return bounding_boxes_roi, bounding_boxes_nm, categories
+        return bounding_boxes, categories

@@ -4,12 +4,13 @@ import time
 
 class YoloDetector:
 
-    def __init__(self, weights_file, config_file, class_names_filepath):
+    def __init__(self, weights_file, config_file, class_names_filepath, threshold:float):
 
         #self._yolo_weights_file = "bus_camera/models/yolov4-tiny/yolov4-tiny.weights"
         #self._yolo_config = "bus_camera/models/yolov4-tiny/yolov4-tiny.cfg"
         self._yolo_weights_file = weights_file
         self._yolo_config = config_file
+        self.threshold = threshold
         self.ver = cv2.__version__
         self._initialise_object_detector(self._yolo_config, self._yolo_weights_file)
 
@@ -42,7 +43,7 @@ class YoloDetector:
             scores = output[:,5:]
             cids = np.argmax(scores, axis=1)
             confidence = scores[range(len(cids)), cids]
-            pos = np.where(confidence > 0.5)[0]
+            pos = np.where(confidence > self.threshold)[0]
             if len(pos) > 0:
 
                 box = (output[pos, : 4] * np.array([w, h, w, h]))

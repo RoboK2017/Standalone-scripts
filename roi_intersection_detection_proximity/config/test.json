@@ -13,5 +13,9 @@
     "roi_nm":[[[436,111], [72,290], [600,568], [689,147]], [[9,312], [0,572], [600,568], [72,290]]],
     "proximity_alpha": 0.01,
     "outlier_priority": 2,
-    "iou_threshold": 0.90
+    "iou_threshold": 0.90, 
+    "roi_threshold":0.50,
+    "nm_roi_threshold":0.50,
+    "detector_threshold": 0.60,
+    "output_fps": 20
 }
