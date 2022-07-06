@@ -3,6 +3,7 @@ from .nearMissDetector import ProximityDetector
 import cv2
 import os
 import random, string
+from .generateCsv import CSVGenerator
 #from moviepy.editor import VideoFileClip
 
 class DataWriter():
@@ -110,10 +111,20 @@ class DataWriter():
         return frames
 
 
-    def writeData(self, video_path:str, bounding_boxes:list, result_roi:list, categories:list, buffer=5):
+    def writeData(self, video_path:str, bounding_boxes:list, result_roi:list, categories:list, pred_confd:list, video_fps:int, buffer:int=5):
+        
         filename = os.path.basename(video_path)
         result_roi_filtered = self._filterResult(result_roi, categories, self.target_class_roi)
         indx_arr, frame_arr = self._divideFrames(result_roi_filtered, buffer, video_path)
+
+        csv_gen = CSVGenerator(bounding_boxes=bounding_boxes, 
+                                categories=categories, 
+                                roi_result=result_roi,
+                                fps=video_fps,
+                                rev_map=self.rev_map,
+                                pred_confd=pred_confd,
+                                width=self.width,
+                                height=self.height)
        
         for i in range(len(indx_arr)):
             #f = filename + '_' + str(i) + '.mp4'
@@ -122,18 +133,19 @@ class DataWriter():
             boxes = [bounding_boxes[i] for i in idx]
             cat = [categories[i] for i in idx]
             #print(self.alpha)
-            result_nm, miss_type = self.near_miss_detector.process(boxes, cat, self.near_miss_pair, self.alpha, self.iou_threshold, self.outlier_priority)
-            miss_type = 0
+            result_nm, nm_roi, miss_type = self.near_miss_detector.process(boxes, cat, self.near_miss_pair, self.alpha, self.iou_threshold, self.outlier_priority)
+            #miss_type = 0
             
             # if len(result_nm) > 0 :
             #     miss_type = np.max(max(result_nm, key=max))
+            seq_id = csv_gen.update(result_nm, idx, self.rev_map[miss_type], nm_roi)
 
             base_path = os.path.join(self.base_path, self.rev_map[miss_type])
-            f = os.path.join(base_path , filename[:-4] + '_' + str(i) + '.mp4')
+            f = os.path.join(base_path , filename[:-4] + '_' + seq_id + '.mp4')
             img_arr = frame_arr[i]
             #box_arr = [frames[i] for i in idx]
 
-            cat_col = [result_roi[i] for i in idx]
+            cat_col = [result_roi_filtered[i] for i in idx]
        
             if miss_type > 0 :
                 #f = os.path.join(self.near_miss_path , filename[:-4] + '_' + str(i) + '.mp4')
@@ -145,12 +157,11 @@ class DataWriter():
             self._gen_video(f, img_arr, boxes, cat_col, fps=self.output_fps)
 
             ### create output for csv
-            # for i in idx:
-            #     temp_arr = [self.rev_map[mt] for mt in result_nm[i]]
-            #     nm_result_arr[i] = temp_arr
-            
-            # videoClip = VideoFileClip(f)
-            # videoClip.write_gif(f[:-4]+ ".gif")
 
-        
-       
+        print("#### Generating output CSV ####")
+        out_fol = os.path.join(self.base_path, 'output_csv')
+        if not os.path.exists(out_fol):
+            os.makedirs(out_fol)       
+
+        csv_filename = os.path.join(out_fol , filename[:-4] + '.csv')
+        csv_gen.generateCsv(csv_filename)

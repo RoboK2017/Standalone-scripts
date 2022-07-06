@@ -40,12 +40,13 @@ class PerAreaIntersectionDetector():
         
         # process all the imput frames and return the results
 
-        frameAlerts =[]
+        frameAlerts = []
         for boxes in frames:
             alerts = []
             for box in boxes:
-                alert = np.array([self._getIntersectionPercentage(roi, box, threshold) for roi in self.roiImgs]).any()
-                alerts.append(alert)
+                alert = np.where(np.array([self._getIntersectionPercentage(roi, box, threshold) for roi in self.roiImgs]) > 0)[0]
+                alert = alert[0] if len(alert) > 0 else 0
+                alerts.append(alert) 
                 #perc[perc > threshold] = True
             frameAlerts.append(alerts)    
             

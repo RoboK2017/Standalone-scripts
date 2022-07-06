@@ -73,6 +73,7 @@ class YoloDetector:
         # get the bounding boxes from indices
         bounding_boxes = []
         predicted_labels = []
+        pred_conf = []
         for idx1 in indices:
             if self.ver >= '4.5.5':
                 idx2 = idx1 #[0]
@@ -82,8 +83,9 @@ class YoloDetector:
             predicted_labels.append(label)
             box = boxes[idx2]
             bounding_boxes.append(box)
+            pred_conf.append(confidences[idx2])
 
-        return bounding_boxes, predicted_labels
+        return bounding_boxes, predicted_labels, np.array(pred_conf)
 
     def _initialise_object_detector(self, yolo_config, yolo_weights):
         self._net = cv2.dnn.readNetFromDarknet(yolo_config, yolo_weights)

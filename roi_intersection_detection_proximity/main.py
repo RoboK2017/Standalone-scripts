@@ -28,24 +28,24 @@ class ROIService():
         self.reader = VideoReader(self.config)
 
 
-    def process(self, video_path:str, fps=10):
+    def process(self, video_path:str):
 
         print("Detecting objects in video...")
         #st_time = time.time()
-        bounding_boxes, categories = self.reader.process_video(video_path)
+        bounding_boxes, categories, pred_confd, video_fps = self.reader.process_video(video_path)
         #et_time = time.time()
         #print(et_time - st_time)
         print("detecting ROI interaction...")
         #print(len(frames))
         detector = ROIDetector(self.config)
-        
+        #print(len(bounding_boxes))
         result_roi = detector.process([bounding_boxes, self.config['roi_threshold']])
         print('writing results into output folder...')
         writer = DataWriter(self.config)
         #video_name = os.path.basename(video)
        # output_path = os.path.join(self.config['output_folder'] , video_name[:-4])
-        buffer = self.config['buffer'] * fps
-        writer.writeData(video_path, bounding_boxes, result_roi, categories, buffer)
+        buffer = self.config['buffer'] * video_fps
+        writer.writeData(video_path, bounding_boxes, result_roi, categories, pred_confd, video_fps, buffer)
 
 
         
